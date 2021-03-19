@@ -5,8 +5,8 @@ from psycopg2.extensions import connection, cursor
 _DBNAME = os.environ["BOT_DB_NAME"]
 _DBUSER = os.environ["BOT_DB_USER"]
 _DBPASS = os.environ["BOT_DB_PASS"]
-_DBHOST = os.environ["BOT_DB_HOST"] or "localhost"
-_DBPORT = os.environ["BOT_DB_PORT"] or "5432"
+_DBHOST = os.getenv("BOT_DB_HOST", "localhost")
+_DBPORT = os.getenv("BOT_DB_PORT", "5432")
 
 
 class context:

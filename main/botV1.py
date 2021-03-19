@@ -1,10 +1,18 @@
 import discord
 import players
+<<<<<<< HEAD
 
 client = discord.Client()
 
 TOKEN = "ODIxMDIyNjMwMTk5MDMzODY3.YE9q6A.CIcehyB9UKwLvxJydcH1nEplUJ0"
 
+=======
+import os
+
+client = discord.Client()
+
+TOKEN = os.environ["TOKEN"]
+>>>>>>> origin/main
 
 @client.event
 async def on_ready():
