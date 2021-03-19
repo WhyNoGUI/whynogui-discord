@@ -1,4 +1,6 @@
 import os
+from typing import Tuple, Optional
+
 import psycopg2
 from psycopg2.extensions import connection, cursor
 
@@ -22,6 +24,7 @@ class context:
                                      password=_DBPASS,
                                      host=_DBHOST,
                                      port=_DBPORT)
+        self._con.autocommit = True
         self._cur = self._con.cursor()
         return self
 
@@ -29,14 +32,29 @@ class context:
         self._cur.close()
         self._con.close()
 
+    def _create_player(self, player_id: str):
+        print("CREATING PLAYER")
+        self._cur.execute("INSERT INTO players (id, rank, coins) "
+                          "VALUES (%s, %s, %s)", (player_id, 'noob', 0))
+
     def coins(self, player_id: str) -> int:
         self._cur.execute("SELECT coins "
                           "FROM players "
                           "WHERE id = %s", (player_id,))
-        return self._cur.fetchone()[0]
+        result: Optional[Tuple[int]] = self._cur.fetchone()
+        if result is None:
+            self._create_player(player_id)
+            return 0
+        else:
+            return result[0]
 
     def rank(self, player_id: str) -> str:
         self._cur.execute("SELECT rank "
                           "FROM players "
                           "WHERE id = %s", (player_id,))
-        return self._cur.fetchone()[0]
+        result: Optional[Tuple[str]] = self._cur.fetchone()
+        if result is None:
+            self._create_player(player_id)
+            return "noob"
+        else:
+            return result[0]
