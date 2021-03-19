@@ -1,41 +1,24 @@
 import discord
+import discord.ext.commands as commands
 import players
-<<<<<<< HEAD
-
-client = discord.Client()
-
-TOKEN = "ODIxMDIyNjMwMTk5MDMzODY3.YE9q6A.CIcehyB9UKwLvxJydcH1nEplUJ0"
-
-=======
 import os
 
-client = discord.Client()
 
-TOKEN = os.environ["TOKEN"]
->>>>>>> origin/main
+with players.context() as player_ctx:
+    bot = commands.Bot(command_prefix="bj!")
 
-@client.event
-async def on_ready():
-    print(f"{client.user} is now connected to the server {client.guilds[0]}")
+    @bot.event
+    async def on_ready():
+        print(f"{bot.user.display_name} is now connected to the server {bot.guilds[0]}")
 
+    @bot.command()
+    async def coins(ctx: commands.Context):
+        author: discord.User = ctx.author
+        await ctx.send(f"{author.display_name}, your current balance is {player_ctx.coins(str(author.id))}")
 
-@client.event
-async def on_message(message):
-    if message.author == client.user:
-        return
+    @bot.command()
+    async def rank(ctx: commands.Context):
+        author: discord.User = ctx.author
+        await ctx.send(f"{author.display_name}, your current rank is {player_ctx.rank(str(author.id))}")
 
-    if message.content.startswith("!coins"):
-        playerid = int(message.content)
-        with players.context() as ctx:
-            balance = ctx.coins(str(playerid))
-        await message.channel.send(f"{message.author}, your current balance is {balance}")
-
-    if message.content.startswith("!coins"):
-        playerid = int(message.content)
-        with players.context() as ctx:
-            rank = ctx.rank(str(playerid))
-        await message.channel.send(f"{message.author}, your current rank is {rank}")
-
-
-client.run(TOKEN)
-
+    bot.run(os.environ["BOT_TOKEN"])
