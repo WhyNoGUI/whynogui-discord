@@ -47,6 +47,12 @@ class context:
             return 0
         else:
             return result[0]
+        
+    def addCoins(self, player_id: str, amount: int) -> None:
+        newamount = max(0, amount + self.coins(player_id))
+        self._cur.execute("""UPDATE players
+                          SET coins = %s
+                          WHERE id = %s""", (str(newamount), player_id))
 
     def rank(self, player_id: str) -> str:
         self._cur.execute("SELECT rank "
