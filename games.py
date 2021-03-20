@@ -21,7 +21,16 @@ class AbstractGame(abc.ABC):
         self._players: Set[str] = set()
 
     @abc.abstractmethod
+    def _on_reaction(self, ctx: commands.Context):
+        pass
+
+    @abc.abstractmethod
     def _init_player(self, player_id) -> bool:
+        pass
+
+    @classmethod
+    @abc.abstractmethod
+    def help(cls) -> str:
         pass
 
     def register_player(self, player_id: str) -> GameRegisterResult:

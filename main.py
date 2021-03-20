@@ -1,6 +1,10 @@
+from collections import Mapping
+from typing import Type
+
 import discord
 import discord.ext.commands as commands
 import players
+import games
 import os
 import random
 
@@ -31,7 +35,7 @@ with players.context() as player_ctx:
         }
 
         def __init__(self):
-            pass
+            self.active_games: Mapping[str, games.AbstractGame] = {}
 
         @commands.command('show your coins')
         async def coins(self, ctx: commands.Context):
@@ -81,6 +85,8 @@ with players.context() as player_ctx:
             player_ctx.rank(list(self.ranks.keys())[self.ranks.index(player_ctx.rank(str(author.id))) + 1])
 
     class Casino(commands.Cog):
+        _GAMES: Mapping[str, Type[games.AbstractGame]]
+
         def __init__(self):
             pass
 
@@ -135,7 +141,15 @@ with players.context() as player_ctx:
     bot.add_cog(Casino())
     bot.run(os.environ["BOT_TOKEN"])
 
-        @commands.command()
-        async def game(self, ctx: commands.Context):
-            pass
+# @commands.command()
+# async def game(self, ctx: commands.Context, action: str, game: str):
+#     if game not in Casino._GAMES:
+#         await ctx.send(f"Game {game} does not exist!")
+#     elif action == 'start':
+#         ...
+#     elif action == 'info':
+#         await ctx.send(Casino._GAMES[game].help())
+#     else:
+#         await ctx.send_help(self)
+#     pass
 
