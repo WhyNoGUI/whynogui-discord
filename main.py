@@ -139,9 +139,6 @@ with players.context() as player_ctx:
                 return
             player_ctx.rank(list(self.ranks.keys())[self.ranks.index(player_ctx.rank(str(author.id))) + 1])
 
-        async def bj(self, ctx: commands.Context):
-
-
     class Casino(commands.Cog):
         def __init__(self):
             pass
