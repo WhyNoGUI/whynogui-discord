@@ -1,5 +1,5 @@
 from collections import Mapping
-from typing import Type
+from typing import Type, Tuple, Optional, List, Any
 
 import discord
 import discord.ext.commands as commands
@@ -7,16 +7,8 @@ import players
 import games
 import os
 import random
-import cards
 
 with players.context() as player_ctx:
-    games = []
-    rps = ["r", "p", "s"]
-
-    def getgame(player):
-        return discord.utils.find(lambda g: player in g, games)
-
-
     class Status(commands.Cog):
         ranks = {
             "Beginner": 0,
@@ -41,22 +33,22 @@ with players.context() as player_ctx:
         @commands.command('show your coins')
         async def coins(self, ctx: commands.Context):
             author: discord.User = ctx.author
-            #if author := ctx.author is not discord.User:
-                #return
+            # if author := ctx.author is not discord.User:
+            # return
             await ctx.send(f"```@{author.display_name}, your current balance is {player_ctx.coins(str(author.id))}```")
 
         @commands.command('how your rank')
         async def rank(self, ctx: commands.Context):
             author: discord.User = ctx.author
-            #if author := ctx.author is not discord.User:
-                #return
+            # if author := ctx.author is not discord.User:
+            # return
             await ctx.send(f"```@{author.display_name}, your current rank is {player_ctx.rank(str(author.id))}```")
 
         @commands.command(help='show ranks and their costs')
         async def ranks(self, ctx: commands.Context):
             author: discord.Member
-            if author := ctx.author is not discord.Member:
-                return
+            # if author := ctx.author is not discord.Member:
+            # return
             await ctx.send(f"""```Beginner              0
                                 Jackass Penguin         200
                                 Little Penguin          500
@@ -85,11 +77,22 @@ with players.context() as player_ctx:
                 return
             player_ctx.rank(list(self.ranks.keys())[self.ranks.index(player_ctx.rank(str(author.id))) + 1])
 
+
     class Casino(commands.Cog):
         _GAMES: Mapping[str, Type[games.AbstractGame]]
+        _RPS = ["r", "p", "s"]
 
         def __init__(self):
-            pass
+            self._active_games = []
+
+        def _get_game(self, player: discord.User) -> Optional[List[Any]]:
+            return discord.utils.find(lambda g: player in g, games)
+
+        def _check(self, author):
+            def inner_check(message):
+                return message.author == author
+
+            return inner_check
 
         @commands.command(help='challenge user to rock-paper-scissors')
         async def new(self, ctx: commands.Context, amount: int):
@@ -105,22 +108,24 @@ with players.context() as player_ctx:
                 await ctx.send(f"```{p2.display_name}, only has {p2coins} coins!```")
             elif p2 is None:
                 await ctx.send(f"```Sorry, failed to find opponent!```")
-            elif getgame(p1) is not None:
+            elif self._get_game(p1) is not None:
                 await ctx.send("```Can not start a new game, you have to finish the current one first```")
-            elif getgame(p2) is not None:
+            elif self._get_game(p2) is not None:
                 await ctx.send(f"```{p2.display_name} is already in a game!```")
             else:
-                games.append([p1, p2, amount])
+                await ctx.send(f"@{p2.name}, do you accept the game with {p1.display_name}? [bj!accept/bj!decline]")
+                await ctx.bot.wait_for('message', check=self._check(ctx.author), timeout=30)
+                self._active_games.append([p1, p2, amount])
                 await ctx.send(f"```Game between {p1.display_name} and {p2.display_name} started.\n"
                                f"There are {amount} coins on the line```")
 
         @commands.command(help='pick your move for rock paper scissors (r/p/s)')
         async def play(self, ctx: commands.Context, symbol: str):
             author: discord.User = ctx.author
-            game = getgame(author)
+            game = self._get_game(author)
             if len(game) == 4:
-                other = rps.index(game[3])
-                current = rps.index(symbol)
+                other = Casino._RPS.index(game[3])
+                current = Casino._RPS.index(symbol)
                 if (other + 1) % 3 == current:
                     player_ctx.addCoins(str(game[0].id), -game[2])
                     player_ctx.addCoins(str(author.id), game[2])
@@ -131,11 +136,12 @@ with players.context() as player_ctx:
                     await ctx.send(f"```{game[0]} has won {game[2]} coins!```")
                 else:
                     await ctx.send("```It's a draw!```")
-                games.remove(game)
+                self._active_games.remove(game)
             else:
                 game.append(symbol)
                 await ctx.message.delete()
                 await ctx.send(f"```{author.display_name} has made a move```")
+
 
     bot = commands.Bot(command_prefix="bj!")
     bot.add_cog(Status())
@@ -153,4 +159,3 @@ with players.context() as player_ctx:
 #     else:
 #         await ctx.send_help(self)
 #     pass
-
