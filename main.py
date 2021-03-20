@@ -7,6 +7,7 @@ import players
 import games
 import os
 import random
+import cards
 
 with players.context() as player_ctx:
     games = []
@@ -42,14 +43,14 @@ with players.context() as player_ctx:
             author: discord.User = ctx.author
             #if author := ctx.author is not discord.User:
                 #return
-            await ctx.send(f"```{author.display_name}, your current balance is {player_ctx.coins(str(author.id))}```")
+            await ctx.send(f"```@{author.display_name}, your current balance is {player_ctx.coins(str(author.id))}```")
 
         @commands.command('how your rank')
         async def rank(self, ctx: commands.Context):
             author: discord.User = ctx.author
             #if author := ctx.author is not discord.User:
                 #return
-            await ctx.send(f"```{author.display_name}, your current rank is {player_ctx.rank(str(author.id))}```")
+            await ctx.send(f"```@{author.display_name}, your current rank is {player_ctx.rank(str(author.id))}```")
 
         @commands.command(help='show ranks and their costs')
         async def ranks(self, ctx: commands.Context):
