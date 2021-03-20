@@ -46,7 +46,7 @@ class context:
             self._create_player(player_id)
             return 0
         else:
-            return result[0]
+             return result[0]
         
     def addCoins(self, player_id: str, amount: int) -> None:
         newamount = max(0, amount + self.coins(player_id))

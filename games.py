@@ -3,6 +3,9 @@ import abc
 from typing import Dict, Set
 import cards
 
+import discord
+import discord.ext.commands as commands
+
 
 class GameRegisterResult(enum.Enum):
     SUCCESS = enum.auto()
@@ -37,6 +40,10 @@ class Blackjack(AbstractGame):
         self._player_cards: Dict[str, cards.MultiPlayingCardCollection] = {}
         self._bank_stats: int = 0
         self._card_deck: cards.MultiPlayingCardCollection = cards.mdeck(cards.cards())
+
+    @classmethod
+    def help(cls) -> str:
+        return 'Play a classic game of Blackjack!'
 
     def _init_player(self, player_id) -> bool:
         self._player_cards[player_id] = cards.mdeck_empty()
