@@ -3,9 +3,25 @@ import discord.ext.commands as commands
 import players
 import os
 
-
 with players.context() as player_ctx:
     class Status(commands.Cog):
+        ranks = {
+            "Beginner": 0,
+            "Jackass Penguin": 200,
+            "Little Penguin": 500,
+            "Chinstrap Penguin": 1000,
+            "Rockhopper Penguin": 5000,
+            "Yellow-eyed Penguin": 10000,
+            "Gentoo Penguin": 20000,
+            "Snares-crested Penguin": 50000,
+            "ERECT-crested Penguin": 100000,
+            "Adelie Penguin": 200000,
+            "Royal Penguin": 300000,
+            "King Penguin": 400000,
+            "Emperor Penguin": 500000,
+            "Addicted Penguin": 1000000
+        }
+
         def __init__(self):
             pass
 
@@ -56,6 +72,14 @@ with players.context() as player_ctx:
                                 Emperor Penguin         500000
                                 Addicted Penguin        1000000```""")
 
+        @commands.command()
+        async def rankup(self, ctx: commands.Context):
+            author: discord.Member
+            if author := ctx.author is not discord.Member:
+                return
+            if player_ctx.coins(str(author.id))  >= self.ranks[self.ranks.index(player_ctx.rank(str(author.id))) + 1]:
+
+
     class Casino(commands.Cog):
         def __init__(self):
             pass
@@ -63,6 +87,7 @@ with players.context() as player_ctx:
         @commands.command()
         async def game(self, ctx: commands.Context):
             pass
+
 
     bot = commands.Bot(command_prefix="bj!")
     bot.add_cog(Status())
