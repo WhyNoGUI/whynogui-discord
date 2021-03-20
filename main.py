@@ -3,6 +3,7 @@ import discord.ext.commands as commands
 import players
 import os
 import random
+import cards
 
 with players.context() as player_ctx:
     games = []
@@ -38,14 +39,14 @@ with players.context() as player_ctx:
             author: discord.User = ctx.author
             #if author := ctx.author is not discord.User:
                 #return
-            await ctx.send(f"```{author.display_name}, your current balance is {player_ctx.coins(str(author.id))}```")
+            await ctx.send(f"```@{author.display_name}, your current balance is {player_ctx.coins(str(author.id))}```")
 
         @commands.command()
         async def rank(self, ctx: commands.Context):
             author: discord.User = ctx.author
             #if author := ctx.author is not discord.User:
                 #return
-            await ctx.send(f"```{author.display_name}, your current rank is {player_ctx.rank(str(author.id))}```")
+            await ctx.send(f"```@{author.display_name}, your current rank is {player_ctx.rank(str(author.id))}```")
 
         @commands.command()
         async def new(self, ctx: commands.Context, amount: int):
@@ -53,18 +54,19 @@ with players.context() as player_ctx:
             p2 = ctx.message.mentions[random.randint(0, len(ctx.message.mentions) - 1)]
             p1coins = player_ctx.coins(str(author.id))
             if p1coins < amount:
-                await ctx.send(f"```{author.display_name}, you only have {p1coins} coins```")
+                await ctx.send(f"```@{author.display_name}, you only have {p1coins} coins```")
                 return
             p2coins = player_ctx.coins(str(p2.id))
             if p2coins < amount:
-                await ctx.send(f"```{p2.display_name}, you only have {p2coins} coins```")
+                await ctx.send(f"```@{p2.display_name}, you only have {p2coins} coins```")
                 return
             if p2 is None:
                 await ctx.send(f"```Sorry, can't find player {ctx.message.split(' ')[1]}```")
                 return
             if getgame(author) is None and getgame(p2) is None:
                 games.append([author, p2, amount])
-                await ctx.send(f"```Game between {author.display_name} and {p2.name} started.\nThere are {amount} coins on the line```")
+                await ctx.send(f"```@{p2.name}, do you accept the game with {author.display_name}? [bj!accept/bj!decline]")
+                await ctx.send(f"```Game between @{author.display_name} and @{p2.name} started.\nThere are {amount} coins on the line```")
             else:
                 await ctx.send("```Can not start a new game, you have to finish the current one first```")
 
@@ -78,7 +80,7 @@ with players.context() as player_ctx:
                 if (other + 1) % 3 == current:
                     player_ctx.addCoins(str(game[0].id), -game[2])
                     player_ctx.addCoins(str(author.id), game[2])
-                    await ctx.send(f"```{author} has won```")
+                    await ctx.send(f"```@{author} has won```")
                 elif (other - 1) % 3 == current:
                     player_ctx.addCoins(str(author.id), -game[2])
                     player_ctx.addCoins(str(game[0].id), game[2])
@@ -136,6 +138,9 @@ with players.context() as player_ctx:
                 await ctx.send("```Not enough coins!```")
                 return
             player_ctx.rank(list(self.ranks.keys())[self.ranks.index(player_ctx.rank(str(author.id))) + 1])
+
+        async def bj(self, ctx: commands.Context):
+
 
     class Casino(commands.Cog):
         def __init__(self):
