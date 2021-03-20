@@ -129,8 +129,13 @@ with players.context() as player_ctx:
             author: discord.Member
             if author := ctx.author is not discord.Member:
                 return
-            if player_ctx.coins(str(author.id))  >= self.ranks[self.ranks.index(player_ctx.rank(str(author.id))) + 1]:
-
+            if player_ctx.rank(str(author.id)) == "Addicted Penguin":
+                await ctx.send("```Already reached the max rank!```")
+                return
+            if player_ctx.coins(str(author.id)) < self.ranks[self.ranks.index(player_ctx.rank(str(author.id))) + 1]:
+                await ctx.send("```Not enough coins!```")
+                return
+            player_ctx.rank(list(self.ranks.keys())[self.ranks.index(player_ctx.rank(str(author.id))) + 1])
 
     class Casino(commands.Cog):
         def __init__(self):

@@ -54,6 +54,11 @@ class context:
                           SET coins = %s
                           WHERE id = %s""", (str(newamount), player_id))
 
+    def newrank(self, player_id: str, rank: str) -> None:
+        self._cur.execute("""UPDATE players
+                            SET rank = %s
+                            WHERE id = %s"""), (rank, player_id)
+
     def rank(self, player_id: str) -> str:
         self._cur.execute("SELECT rank "
                           "FROM players "
