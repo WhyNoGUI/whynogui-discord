@@ -2,29 +2,37 @@ import discord
 import discord.ext.commands as commands
 import players
 import os
+import random
 
 
 with players.context() as player_ctx:
+    games = []
+    rps = ["r", "p", "s"]
+
+    def getgame(player):
+        return discord.utils.find(lambda g: player in g, games)
+
+
     class Status(commands.Cog):
         def __init__(self):
             pass
 
         @commands.command()
         async def coins(self, ctx: commands.Context):
-            author: discord.Member
-            if author := ctx.author is not discord.Member:
-                return
-            await ctx.send(f"{author.display_name}, your current balance is {player_ctx.coins(str(author.id))}")
+            author: discord.User = ctx.author
+            #if author := ctx.author is not discord.User:
+                #return
+            await ctx.send(f"```{author.display_name}, your current balance is {player_ctx.coins(str(author.id))}```")
 
         @commands.command()
         async def rank(self, ctx: commands.Context):
-            author: discord.Member
-            if author := ctx.author is not discord.Member:
-                return
-            await ctx.send(f"{author.display_name}, your current rank is {player_ctx.rank(str(author.id))}")
-            
+            author: discord.User = ctx.author
+            #if author := ctx.author is not discord.User:
+                #return
+            await ctx.send(f"```{author.display_name}, your current rank is {player_ctx.rank(str(author.id))}```")
+
         @commands.command()
-        async def new(ctx: commands.Context, amount: int):
+        async def new(self, ctx: commands.Context, amount: int):
             author: discord.User = ctx.author
             p2 = ctx.message.mentions[random.randint(0, len(ctx.message.mentions) - 1)]
             p1coins = player_ctx.coins(str(author.id))
@@ -44,11 +52,8 @@ with players.context() as player_ctx:
             else:
                 await ctx.send("```Can not start a new game, you have to finish the current one first```")
 
-        def getgame(player):
-            return discord.utils.find(lambda g: player in g, games)
-
-        @bot.command()
-        async def play(ctx: commands.Context, symbol: str):
+        @commands.command()
+        async def play(self, ctx: commands.Context, symbol: str):
             author: discord.User = ctx.author
             game = getgame(author)
             if len(game) == 4:
