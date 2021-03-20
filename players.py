@@ -35,7 +35,7 @@ class context:
     def _create_player(self, player_id: str):
         print("CREATING PLAYER")
         self._cur.execute("INSERT INTO players (id, rank, coins) "
-                          "VALUES (%s, %s, %s)", (player_id, 'noob', 0))
+                          "VALUES (%s, %s, %s)", (player_id, 'Beginner', 0))
 
     def coins(self, player_id: str) -> int:
         self._cur.execute("SELECT coins "
@@ -55,6 +55,6 @@ class context:
         result: Optional[Tuple[str]] = self._cur.fetchone()
         if result is None:
             self._create_player(player_id)
-            return "noob"
+            return "Beginner"
         else:
             return result[0]
