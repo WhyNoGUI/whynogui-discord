@@ -4,6 +4,7 @@ import players
 import os
 import random
 
+
 with players.context() as player_ctx:
     games = []
     rps = ["r", "p", "s"]
