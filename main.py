@@ -79,6 +79,25 @@ with players.context() as player_ctx:
             player_ctx.rank(list(self.ranks.keys())[self.ranks.index(player_ctx.rank(str(author.id))) + 1])
 
 
+    def _rps_emoji(symbol: str) -> str:
+        if symbol == "r":
+            return "https://cdn.discordapp.com/attachments/821013410657075211/823673429684125746/" \
+                   "wdjDVCWJVk0MQAAAABJRU5ErkJggg.png"
+        elif symbol == "p":
+            return "https://cdn.discordapp.com/attachments/821013410657075211/823673669460033577/" \
+                   "AfqQyt7KRUfZwAAAABJRU5ErkJggg.png"
+        elif symbol == "s":
+            return "https://cdn.discordapp.com/attachments/821013410657075211/823673548127862805/" \
+                   "w8Rr5YIhg2tfgAAAABJRU5ErkJggg.png"
+
+
+    def _check(author):
+        def inner_check(message):
+            return message.author == author
+
+        return inner_check
+
+
     class Casino(commands.Cog):
         _GAMES: collections.Mapping[str, Type[games.AbstractGame]]
         _RPS = ["r", "p", "s"]
@@ -87,14 +106,8 @@ with players.context() as player_ctx:
             self._active_games = []
             self._game_offers = []
 
-        def _get_game(self, player: discord.User) -> Optional[List[Any]]:
-            return discord.utils.find(lambda g: player in g, games)
-
-        def _check(self, author):
-            def inner_check(message):
-                return message.author == author
-
-            return inner_check
+        def _get_game(self, player: discord.User):  # -> Optional[List[Any]]:
+            return discord.utils.find(lambda g: player in g, self._active_games)
 
         @commands.command(help='challenge user to rock-paper-scissors')
         async def new(self, ctx: commands.Context, amount: int):
@@ -116,10 +129,10 @@ with players.context() as player_ctx:
             elif self._get_game(p2) is not None:
                 await ctx.send(f"```{p2.display_name} is already in a game!```")
             else:
-                await ctx.send(f"{p2.mention()}, {p1.display_name} challenges you to a game of rock, paper, scissors\n"
-                               f"[bj!accept/bj!decline]")
-                # await ctx.bot.wait_for('message', check=self._check(ctx.author), timeout=30)
                 self._game_offers.append([p1, p2, amount])
+                await ctx.send(f"{p2.mention} ```{p1.display_name} challenges you to a game of rock, paper, scissors\n"
+                               f"[bj!accept/bj!decline]```")
+                # await ctx.bot.wait_for('message', check=self._check(ctx.author), timeout=30)
                 # await ctx.send(f"```Game between {p1.display_name} and {p2.display_name} started.\n"
                 # f"There are {amount} coins on the line```")
 
@@ -146,7 +159,7 @@ with players.context() as player_ctx:
                 await ctx.send("```There is no offer for you to decline.```")
             else:
                 self._game_offers.remove(offered)
-                await ctx.send(f"```{offered[0].mention()} {author.display_name} declined your offer.```")
+                await ctx.send(f"{offered[0].mention} ```{author.display_name} declined your offer.```")
 
         @commands.command(help='pick your move for rock paper scissors (r/p/s)')
         async def play(self, ctx: commands.Context, symbol: str):
@@ -159,6 +172,14 @@ with players.context() as player_ctx:
             if len(game) == 4:
                 other = Casino._RPS.index(game[3])
                 current = Casino._RPS.index(symbol)
+                embed1 = discord.Embed()
+                embed1.set_thumbnail(url=game[0].avatar_url)
+                embed1.set_image(url=_rps_emoji(game[3]))
+                embed2 = discord.Embed()
+                embed2.set_thumbnail(url=author.avatar_url)
+                embed2.set_image(url=_rps_emoji(symbol))
+                await ctx.send(embed=embed1)
+                await ctx.send(embed=embed2)
                 if (other + 1) % 3 == current:
                     player_ctx.addCoins(str(game[0].id), -game[2])
                     player_ctx.addCoins(str(author.id), game[2])
