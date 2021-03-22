@@ -111,19 +111,31 @@ with players.context() as player_ctx:
 
         @commands.command(help='challenge user to rock-paper-scissors')
         async def new(self, ctx: commands.Context, amount: int):
-            if not ctx.message.mentions:
+            mentions = ctx.message.mentions
+            if mentions is None:
                 await ctx.send(f"```You didn't mention an opponent!```")
                 return
             p1: discord.User = ctx.author
-            p2: discord.User = ctx.message.mentions[random.randint(0, len(ctx.message.mentions) - 1)]
+            if len(mentions) == 1:
+                p2: discord.User = mentions[0]
+                p2coins: int = player_ctx.coins(str(p2.id))
+                if p2coins < amount:
+                    await ctx.send(f"```{p2.display_name} only has {p2coins} coins!```")
+                    return
+            else:
+                candidats = [m for m in mentions if player_ctx.coins(str(m.id)) >= amount]
+                if candidats is None:
+                    await ctx.send("```There is no one in this group who has enough coins!```")
+                    return
+                else:
+                    p2: discord.User = candidats[random.randint(0, len(candidats) - 1)]
+                    p2coins: int = player_ctx.coins(str(p2.id))
+
             p1coins: int = player_ctx.coins(str(p1.id))
-            p2coins: int = player_ctx.coins(str(p2.id))
             if p2 is None:
                 await ctx.send(f"```Sorry, failed to find opponent!```")
             elif p1coins < amount:
                 await ctx.send(f"```You only have {p1coins} coins!```")
-            elif p2coins < amount:
-                await ctx.send(f"```{p2.display_name} only has {p2coins} coins!```")
             elif self._get_game(p1) is not None:
                 await ctx.send("```You have to finish your current game before starting a new one!```")
             elif self._get_game(p2) is not None:
