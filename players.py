@@ -73,7 +73,7 @@ class context:
     def randc(self, player_id: str):
         self._cur.execute("""SELECT rank, coins
                              FROM players
-                             WHERE id = %s"""), (player_id)
+                             WHERE id = %s""", (player_id,))
         result: Optional[Tuple[str, int]] = self._cur.fetchone()
         if result is None:
             self._create_player(player_id)

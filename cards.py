@@ -30,7 +30,7 @@ class PlayingCard:
 
     def __init__(self, suit: PlayingCardSuite, value: PlayingCardValue, secret: object) -> None:
         if secret is not _SECRET:
-            raise RuntimeError("PlayingCard should not be instantiated outside of the util.py module.")
+            raise RuntimeError("PlayingCard should not be instantiated outside of the main.py module.")
         self._suit = suit
         self._value = value
 
@@ -45,7 +45,7 @@ class UniquePlayingCardCollection(MutableSet[PlayingCard]):
 
     def __init__(self, source: MutableSet[PlayingCard], secret: object) -> None:
         if secret is not _SECRET:
-            raise RuntimeError("UniquePlayingCardDeck should not be instantiated outside of the util.py module.")
+            raise RuntimeError("UniquePlayingCardDeck should not be instantiated outside of the main.py module.")
         self._cards = source
 
     def draw(self) -> PlayingCard:
