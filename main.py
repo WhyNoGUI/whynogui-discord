@@ -1,5 +1,5 @@
 import collections.abc
-from typing import Type, Tuple, Optional, List, Any
+from typing import Type, Tuple, Optional, List, Any, Dict
 
 import discord
 import discord.ext.commands as commands
@@ -7,6 +7,7 @@ import players
 import games
 import os
 import random
+import cards
 
 with players.context() as player_ctx:
     class Status(commands.Cog):
@@ -93,7 +94,7 @@ with players.context() as player_ctx:
         return inner_check
 
 
-    class Casino(commands.Cog):
+    class RPS(commands.Cog):
         _GAMES: collections.Mapping[str, Type[games.AbstractGame]]
         _RPS = ["r", "p", "s"]
 
@@ -194,8 +195,8 @@ with players.context() as player_ctx:
             else:
                 await ctx.message.delete()
             if len(game) == 5:
-                other = Casino._RPS.index(game[3])
-                current = Casino._RPS.index(symbol)
+                other = RPS._RPS.index(game[3])
+                current = RPS._RPS.index(symbol)
                 embed = discord.Embed()
                 embed.set_thumbnail(url=author.avatar_url)
                 embed.set_image(url=_rps_emoji(symbol))
@@ -229,9 +230,16 @@ with players.context() as player_ctx:
             self._game_offers.remove(game)
             await ctx.send("```Successfully canceled your game challenge!```")
 
+    class Blackjack(commands.Cog):
+        def __init__(self):
+            pass
+
+        async def bj(self, ctx: commands.Context):
+            author: discord.User = ctx.author
+
     bot = commands.Bot(command_prefix="bj!")
     bot.add_cog(Status())
-    bot.add_cog(Casino())
+    bot.add_cog(RPS())
     bot.run(os.environ["BOT_TOKEN"])
 
 # @commands.command()
