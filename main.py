@@ -181,17 +181,14 @@ with players.context() as player_ctx:
                 await ctx.send("```You aren't currently in a a game!```")
             else:
                 await ctx.message.delete()
-            if len(game) == 4:
+            if len(game) == 5:
                 other = Casino._RPS.index(game[3])
                 current = Casino._RPS.index(symbol)
-                embed1 = discord.Embed()
-                embed1.set_thumbnail(url=game[0].avatar_url)
-                embed1.set_image(url=_rps_emoji(game[3]))
-                embed2 = discord.Embed()
-                embed2.set_thumbnail(url=author.avatar_url)
-                embed2.set_image(url=_rps_emoji(symbol))
-                await ctx.send(embed=embed1)
-                await ctx.send(embed=embed2)
+                embed = discord.Embed()
+                embed.set_thumbnail(url=author.avatar_url)
+                embed.set_image(url=_rps_emoji(symbol))
+                await ctx.send(embed=game[4])
+                await ctx.send(embed=embed)
                 if (other + 1) % 3 == current:
                     player_ctx.addCoins(str(game[0].id), -game[2])
                     player_ctx.addCoins(str(author.id), game[2])
@@ -204,8 +201,22 @@ with players.context() as player_ctx:
                     await ctx.send("```It's a draw!```")
                 self._active_games.remove(game)
             else:
+                embed = discord.Embed()
+                embed.set_thumbnail(url=author.avatar_url)
+                embed.set_image(url=_rps_emoji(symbol))
                 game.append(symbol)
+                game.append(embed)
                 await ctx.send(f"```{author.display_name} has made a move```")
+
+        @commands.command(help='show your profile')
+        async def profile(self, ctx: commands.Context) -> None:
+            author: discord.User = ctx.author
+            embed = discord.Embed(title=author.display_name)
+            embed.set_thumbnail(url=author.avatar_url)
+            attributes = player_ctx.randc(str(author.id))
+            embed.add_field(name="Rank:", value=attributes[0])
+            embed.add_field(name="Balance:", value=str(attributes[1])+" :moneybag:")
+            await ctx.send(embed=embed)
 
 
     bot = commands.Bot(command_prefix="bj!")
