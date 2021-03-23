@@ -41,7 +41,7 @@ with players.context() as player_ctx:
             embed.add_field(name="Balance:", value=str(attributes[1]) + " :moneybag:")
             await ctx.send(embed=embed)
 
-        @commands.command(help='show ranks and their costs')
+        @commands.command(help='show all available ranks and their costs')
         async def ranks(self, ctx: commands.Context):
             author: discord.Member
             description = """```
@@ -62,7 +62,7 @@ with players.context() as player_ctx:
             embed = discord.Embed(title="Ranks:", description=description)
             await ctx.send(embed=embed)
 
-        @commands.command(help='spend your coins to reach the next rank')
+        @commands.command(help='spend coins to reach the next rank')
         async def rankup(self, ctx: commands.Context):
             author: discord.Member = ctx.author
             current_rank = player_ctx.rank(str(author.id))
@@ -244,6 +244,7 @@ with players.context() as player_ctx:
             game = self._get_game_offer(author)
             if game is None:
                 await ctx.send(embed=_embed_message("You aren't currently in a game."))
+                return
             self._game_offers.remove(game)
             await ctx.send(embed=_embed_message("Successfully canceled your game challenge!"))
 
@@ -254,7 +255,7 @@ with players.context() as player_ctx:
         async def bj(self, ctx: commands.Context):
             author: discord.User = ctx.author
 
-    bot = commands.Bot(command_prefix="bj!")
+    bot = commands.Bot(command_prefix="rps!")
     bot.add_cog(Status())
     bot.add_cog(RPS())
     bot.run(os.environ["BOT_TOKEN"])
