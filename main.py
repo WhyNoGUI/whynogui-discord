@@ -10,31 +10,31 @@ import random
 
 with players.context() as player_ctx:
     class Status(commands.Cog):
-        ranks = {
-            "Beginner": 0,
-            "Jackass Penguin": 200,
-            "Little Penguin": 500,
-            "Chinstrap Penguin": 1000,
-            "Rockhopper Penguin": 5000,
-            "Yellow-eyed Penguin": 10000,
-            "Gentoo Penguin": 20000,
-            "Snares-crested Penguin": 50000,
-            "ERECT-crested Penguin": 100000,
-            "Adelie Penguin": 200000,
-            "Royal Penguin": 300000,
-            "King Penguin": 400000,
-            "Emperor Penguin": 500000,
-            "Addicted Penguin": 1000000
-        }
 
         def __init__(self):
             self.active_games: collections.Mapping[str, games.AbstractGame] = {}
+            self.ranks = {
+                "Beginner": 0,
+                "Jackass Penguin": 200,
+                "Little Penguin": 500,
+                "Chinstrap Penguin": 1000,
+                "Rockhopper Penguin": 5000,
+                "Yellow-eyed Penguin": 10000,
+                "Gentoo Penguin": 20000,
+                "Snares-crested Penguin": 50000,
+                "ERECT-crested Penguin": 100000,
+                "Adelie Penguin": 200000,
+                "Royal Penguin": 300000,
+                "King Penguin": 400000,
+                "Emperor Penguin": 500000,
+                "Addicted Penguin": 1000000
+            }
 
         @commands.command(help='show your coins')
         async def coins(self, ctx: commands.Context):
             author: discord.User = ctx.author
 
-            embed = discord.Embed(title = author.display_name)
+            embed = discord.Embed(title=author.display_name)
             embed.add_field(name="Balance:", value=str(player_ctx.coins(str(author.id))))
             await ctx.send(embed=embed)
 
@@ -73,10 +73,11 @@ with players.context() as player_ctx:
             if player_ctx.rank(str(author.id)) == "Addicted Penguin":
                 await ctx.send("```Already reached the max rank!```")
                 return
-            if player_ctx.coins(str(author.id)) < self.ranks[self.ranks.index(player_ctx.rank(str(author.id))) + 1]:
+            if player_ctx.coins(str(author.id)) < list(self.ranks.values())[list(self.ranks.keys()).index(player_ctx.rank(str(author.id))) + 1]:
                 await ctx.send("```Not enough coins!```")
                 return
-            player_ctx.rank(list(self.ranks.keys())[self.ranks.index(player_ctx.rank(str(author.id))) + 1])
+            player_ctx.newrank(str(author.id),
+                               self.ranks[list(self.ranks.keys()).index(player_ctx.rank(str(author.id))) + 1])
 
 
     def _rps_emoji(symbol: str) -> str:
@@ -109,9 +110,23 @@ with players.context() as player_ctx:
         def _get_game(self, player: discord.User):  # -> Optional[List[Any]]:
             return discord.utils.find(lambda g: player in g, self._active_games)
 
+        def _get_game_offer(self, player: discord.User):
+            return discord.utils.find(lambda go: player in go, self._game_offers)
+
         @commands.command(help='challenge user to rock-paper-scissors')
         async def new(self, ctx: commands.Context, amount: int):
-            mentions = ctx.message.mentions
+            if ctx.message.mention_everyone:
+                mentions = ctx.guild.members
+                print("everyone")
+            else:
+                roles = ctx.message.role_mentions
+                channels = ctx.message.channel_mentions
+                mentions: set = ctx.message.mentions
+                for role in roles:
+                    mentions += role.members
+                for channel in channels:
+                    mentions += channel.members
+            print(mentions)
             if mentions is None:
                 await ctx.send(f"```You didn't mention an opponent!```")
                 return
@@ -123,13 +138,16 @@ with players.context() as player_ctx:
                     await ctx.send(f"```{p2.display_name} only has {p2coins} coins!```")
                     return
             else:
-                candidats = [m for m in mentions if player_ctx.coins(str(m.id)) >= amount]
-                if candidats is None:
+                # candidats = [m for m in mentions if player_ctx.coins(str(m.id)) >= amount]
+                for m in mentions:
+                    print(player_ctx.coins(str(m.id)))
+                filter(lambda m: player_ctx.coins(str(m.id)) >= amount, mentions)
+                print(mentions)
+                if mentions is None:
                     await ctx.send("```There is no one in this group who has enough coins!```")
                     return
                 else:
-                    p2: discord.User = candidats[random.randint(0, len(candidats) - 1)]
-                    p2coins: int = player_ctx.coins(str(p2.id))
+                    p2: discord.User = mentions[random.randint(0, len(mentions) - 1)]
 
             p1coins: int = player_ctx.coins(str(p1.id))
             if p2 is None:
@@ -208,6 +226,15 @@ with players.context() as player_ctx:
                 game.append(embed)
                 await ctx.send(f"```{author.display_name} has made a move```")
 
+        @commands.command(help='cancel your current outgoing game challenge')
+        async def cancel(self, ctx: commands.Context) -> None:
+            author: discord.User = ctx.author
+            game = self._get_game_offer(author)
+            if game is None:
+                await ctx.send("```You aren't currently in a game.```")
+            self._game_offers.remove(game)
+            await ctx.send("```Successfully canceled your game challenge!```")
+
         @commands.command(help='show your profile')
         async def profile(self, ctx: commands.Context) -> None:
             author: discord.User = ctx.author
@@ -215,7 +242,7 @@ with players.context() as player_ctx:
             embed.set_thumbnail(url=author.avatar_url)
             attributes = player_ctx.randc(str(author.id))
             embed.add_field(name="Rank:", value=attributes[0])
-            embed.add_field(name="Balance:", value=str(attributes[1])+" :moneybag:")
+            embed.add_field(name="Balance:", value=str(attributes[1]) + " :moneybag:")
             await ctx.send(embed=embed)
 
 
