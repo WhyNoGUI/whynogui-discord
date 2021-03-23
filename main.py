@@ -30,20 +30,14 @@ with players.context() as player_ctx:
                 "Addicted Penguin": 1000000
             }
 
-        @commands.command(help='show your coins')
-        async def coins(self, ctx: commands.Context):
+        @commands.command(help='show your profile')
+        async def profile(self, ctx: commands.Context) -> None:
             author: discord.User = ctx.author
-
             embed = discord.Embed(title=author.display_name)
-            embed.add_field(name="Balance:", value=str(player_ctx.coins(str(author.id))))
-            await ctx.send(embed=embed)
-
-        @commands.command(help='how your rank')
-        async def rank(self, ctx: commands.Context):
-            author: discord.User = ctx.author
-
-            embed = discord.Embed(title=author.display_name)
-            embed.add_field(name="Rank:", value=str(player_ctx.rank(str(author.id))))
+            embed.set_thumbnail(url=author.avatar_url)
+            attributes = player_ctx.randc(str(author.id))
+            embed.add_field(name="Rank:", value=attributes[0])
+            embed.add_field(name="Balance:", value=str(attributes[1]) + " :moneybag:")
             await ctx.send(embed=embed)
 
         @commands.command(help='show ranks and their costs')
@@ -234,17 +228,6 @@ with players.context() as player_ctx:
                 await ctx.send("```You aren't currently in a game.```")
             self._game_offers.remove(game)
             await ctx.send("```Successfully canceled your game challenge!```")
-
-        @commands.command(help='show your profile')
-        async def profile(self, ctx: commands.Context) -> None:
-            author: discord.User = ctx.author
-            embed = discord.Embed(title=author.display_name)
-            embed.set_thumbnail(url=author.avatar_url)
-            attributes = player_ctx.randc(str(author.id))
-            embed.add_field(name="Rank:", value=attributes[0])
-            embed.add_field(name="Balance:", value=str(attributes[1]) + " :moneybag:")
-            await ctx.send(embed=embed)
-
 
     bot = commands.Bot(command_prefix="bj!")
     bot.add_cog(Status())
