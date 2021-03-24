@@ -46,6 +46,7 @@ with players.context() as player_ctx:
                 "Rockhopper Penguin": 5000,
                 "Yellow-eyed Penguin": 10000,
                 "Gentoo Penguin": 20000,
+                # varchar(20) isn't enough for some names
                 "Snares-cres Penguin": 50000,
                 "ERECT-crest Penguin": 100000,
                 "Adelie Penguin": 200000,
@@ -141,7 +142,7 @@ with players.context() as player_ctx:
         def _get_game_offer(self, player: discord.User):
             return discord.utils.find(lambda go: go._contains_player(player), self._game_offers)
 
-        @commands.command(help='challenge user to rock-paper-scissors')
+        @commands.command(help='challenge user to rock-paper-scissors\n@mention the user you want to challenge')
         async def new(self, ctx: commands.Context, amount: int):
             if amount is None:
                 embed = discord.Embed(description="Please specify the amount of  :coin:  you want to play for!")
@@ -164,28 +165,33 @@ with players.context() as player_ctx:
                 await ctx.send(embed=_embed_message("You didn't mention an opponent!"))
                 return
             p1: discord.User = ctx.author
-            if len(mentions) == 1:
-                p2: discord.User = mentions[0]
-                p2coins: int = player_ctx.coins(str(p2.id))
-                if p2coins < amount:
-                    embed = discord.Embed(description=f"{p2.display_name} only has {p2coins}  :coin:")
-                    await ctx.send(embed=embed)
-                    return
-            else:
-                # candidats = [m for m in mentions if player_ctx.coins(str(m.id)) >= amount]
-                for m in mentions:
-                    print(player_ctx.coins(str(m.id)))
-                filter(lambda men: player_ctx.coins(str(men.id)) >= amount, mentions)
-                print(mentions)
-                if mentions is None:
-                    await ctx.send(embed=_embed_message("There is no one in this group who has enough  :coin:"))
-                    return
-                else:
-                    p2: discord.User = mentions[random.randint(0, len(mentions) - 1)]
-
+            # if len(mentions) == 1:
+            #     p2: discord.User = mentions[0]
+            #     p2coins: int = player_ctx.coins(str(p2.id))
+            #     if p2coins < amount:
+            #         embed = discord.Embed(description=f"{p2.display_name} only has {p2coins}  :coin:")
+            #         await ctx.send(embed=embed)
+            #         return
+            # else:
+            #     # candidats = [m for m in mentions if player_ctx.coins(str(m.id)) >= amount]
+            #     for m in mentions:
+            #         print(player_ctx.coins(str(m.id)))
+            #     filter(lambda men: player_ctx.coins(str(men.id)) >= amount, mentions)
+            #     print(mentions)
+            #     if mentions is None:
+            #         await ctx.send(embed=_embed_message("There is no one in this group who has enough  :coin:"))
+            #         return
+            #     else:
+            #         p2: discord.User = mentions[random.randint(0, len(mentions) - 1)]
             p1coins: int = player_ctx.coins(str(p1.id))
+            p2: discord.User = mentions[random.randint(0, len(mentions) - 1)]
             if p2 is None:
                 await ctx.send(embed=_embed_message("Sorry, failed to find opponent!"))
+                return
+            p2coins: int = player_ctx.coins(str(p2.id))
+            if p2coins < amount:
+                embed = discord.Embed(description=f"{p2.display_name} only has {p2coins}  :coin:")
+                await ctx.send(embed=embed)
             elif p1coins < amount:
                 await ctx.send(embed=_embed_message(f"You only have {p1coins}  :coin:"))
             elif self._get_game(p1) is not None:
@@ -195,9 +201,10 @@ with players.context() as player_ctx:
             else:
                 self._game_offers.append(RPSGame(channel=ctx.channel, p1=p1, p2=p2, coins=amount))
                 await ctx.send(embed=_embed_message(f"{p2.mention}\n {p1.display_name} challenges you to a game of\n"
-                                                    f"Rock, Paper, Scissors!\n[rps!accept/rps!decline]"))
+                                                    f"Rock, Paper, Scissors for {amount}  :coin: !\n"
+                                                    f"[rps!accept/rps!decline]"))
 
-        @commands.command()
+        @commands.command(help="accept a game offer")
         async def accept(self, ctx: commands.Context):
             author: discord.User = ctx.author
             if not self._get_game(author) is None:
@@ -205,17 +212,17 @@ with players.context() as player_ctx:
             else:
                 offered = self._get_game_offer(author)
                 if offered is None:
-                    await offered.channel.send(embed=_embed_message("There is no offer for you to accept."))
+                    await ctx.send(embed=_embed_message("There is no offer for you to accept."))
                 else:
                     self._active_games.append(offered)
                     self._game_offers.remove(offered)
                     await offered.channel.send(embed=_embed_message(
                         f"Game between {offered.p1.display_name} and {offered.p2.display_name} "
-                        f"started.\nThere are {offered.coins} coins on the line!"))
+                        f"started.\nThere are {offered.coins}  :coin:  on the line!"))
                     await offered.p1.send(embed=_embed_message("Please make your move here with rps!play [r/p/s]"))
                     await offered.p2.send(embed=_embed_message("Please make your move here with rps!play [r/p/s]"))
 
-        @commands.command()
+        @commands.command("decline a game offer")
         async def decline(self, ctx: commands.Context):
             author: discord.User = ctx.author
             offered = self._get_game_offer(author)
@@ -223,7 +230,8 @@ with players.context() as player_ctx:
                 await ctx.send(embed=_embed_message("There is no offer for you to decline."))
             else:
                 self._game_offers.remove(offered)
-                await ctx.send(embed=_embed_message(f"{offered.p1.mention} {author.display_name} declined your offer."))
+                await offered.channel.send(embed=_embed_message(
+                    f"{offered.p1.mention} {author.display_name} declined your offer."))
 
         @commands.command(help='pick your move for rock paper scissors (r/p/s)')
         async def play(self, ctx: commands.Context, symbol: str):
