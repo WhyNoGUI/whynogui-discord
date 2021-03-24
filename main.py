@@ -10,6 +10,30 @@ import random
 import cards
 
 with players.context() as player_ctx:
+
+    class RPSMove:
+        def __init__(self, player=None, symbol: str = None):
+            self.player = player
+            self.symbol = symbol
+            pass
+
+    class RPSGame:
+        def __init__(self, channel=None, p1: discord.User = None, p2: discord.User = None, coins: int = 0,
+                     move1: RPSMove = None, move2: RPSMove = None,
+                     embed1: discord.Embed = None, embed2: discord.Embed = None):
+            self.channel = channel
+            self.p1 = p1
+            self.p2 = p2
+            self.coins = coins
+            self.move1 = move1
+            self.move2 = move2
+            self.embed1 = embed1
+            self.embed2 = embed2
+            pass
+
+        def _contains_player(self, player) -> bool:
+            return self.p1 == player or self.p2 == player
+
     class Status(commands.Cog):
 
         def __init__(self):
@@ -112,10 +136,10 @@ with players.context() as player_ctx:
             self._game_offers = []
 
         def _get_game(self, player: discord.User):  # -> Optional[List[Any]]:
-            return discord.utils.find(lambda g: player in g, self._active_games)
+            return discord.utils.find(lambda g: g._contains_player(player), self._active_games)
 
         def _get_game_offer(self, player: discord.User):
-            return discord.utils.find(lambda go: player in go, self._game_offers)
+            return discord.utils.find(lambda go: go._contains_player(player), self._game_offers)
 
         @commands.command(help='challenge user to rock-paper-scissors')
         async def new(self, ctx: commands.Context, amount: int):
@@ -123,18 +147,19 @@ with players.context() as player_ctx:
                 embed = discord.Embed(description="Please specify the amount of  :coin:  you want to play for!")
                 await ctx.send(embed=embed)
                 return
-            if ctx.message.mention_everyone:
-                mentions = ctx.guild.members
-                print("everyone")
-            else:
-                roles = ctx.message.role_mentions
-                channels = ctx.message.channel_mentions
-                mentions: set = ctx.message.mentions
-                for role in roles:
-                    mentions += role.members
-                for channel in channels:
-                    mentions += channel.members
-            print(mentions)
+            # if ctx.message.mention_everyone:
+            #     mentions = ctx.guild.members
+            #     print("everyone")
+            # else:
+            #     roles = ctx.message.role_mentions
+            #     channels = ctx.message.channel_mentions
+            #     mentions: set = ctx.message.mentions
+            #     for role in roles:
+            #         mentions += role.members
+            #     for channel in channels:
+            #         mentions += channel.members
+            # print(mentions)
+            mentions = ctx.message.mentions
             if mentions is None:
                 await ctx.send(embed=_embed_message("You didn't mention an opponent!"))
                 return
@@ -168,9 +193,9 @@ with players.context() as player_ctx:
             elif self._get_game(p2) is not None:
                 await ctx.send(embed=_embed_message(f"{p2.display_name} is already in a game!"))
             else:
-                self._game_offers.append([p1, p2, amount])
+                self._game_offers.append(RPSGame(channel=ctx.channel, p1=p1, p2=p2, coins=amount))
                 await ctx.send(embed=_embed_message(f"{p2.mention}\n {p1.display_name} challenges you to a game of\n"
-                                                    f"Rock, Paper, Scissors!\n[bj!accept/bj!decline]"))
+                                                    f"Rock, Paper, Scissors!\n[rps!accept/rps!decline]"))
 
         @commands.command()
         async def accept(self, ctx: commands.Context):
@@ -178,65 +203,72 @@ with players.context() as player_ctx:
             if not self._get_game(author) is None:
                 await ctx.send(embed=_embed_message("You have to finish your current game before starting a new one."))
             else:
-                offered = discord.utils.find(lambda g: author in g, self._game_offers)
+                offered = self._get_game_offer(author)
                 if offered is None:
-                    await ctx.send(embed=_embed_message("There is no offer for you to accept."))
+                    await offered.channel.send(embed=_embed_message("There is no offer for you to accept."))
                 else:
                     self._active_games.append(offered)
                     self._game_offers.remove(offered)
-                    await ctx.send(embed=_embed_message(f"Game between {author.display_name} and {offered[0].name} "
-                                                        f"started.\nThere are {offered[2]} coins on the line!"))
+                    await offered.channel.send(embed=_embed_message(
+                        f"Game between {offered.p1.display_name} and {offered.p2.display_name} "
+                        f"started.\nThere are {offered.coins} coins on the line!"))
+                    await offered.p1.send(embed=_embed_message("Please make your move here with rps!play [r/p/s]"))
+                    await offered.p2.send(embed=_embed_message("Please make your move here with rps!play [r/p/s]"))
 
         @commands.command()
         async def decline(self, ctx: commands.Context):
             author: discord.User = ctx.author
-            offered = discord.utils.find(lambda g: author in g, self._game_offers)
+            offered = self._get_game_offer(author)
             if offered is None:
                 await ctx.send(embed=_embed_message("There is no offer for you to decline."))
             else:
                 self._game_offers.remove(offered)
-                await ctx.send(embed=_embed_message(f"{offered[0].mention} {author.display_name} declined your offer."))
+                await ctx.send(embed=_embed_message(f"{offered.p1.mention} {author.display_name} declined your offer."))
 
         @commands.command(help='pick your move for rock paper scissors (r/p/s)')
         async def play(self, ctx: commands.Context, symbol: str):
             author: discord.User = ctx.author
             game = self._get_game(author)
             if game is None:
-                await ctx.send(embed=_embed_message("You aren't currently in a a game!"))
-            else:
-                await ctx.message.delete()
-            if len(game) == 5:
-                other = RPS._RPS.index(game[3])
+                await ctx.send(embed=_embed_message("You aren't currently in a game!"))
+                return
+            # else:
+            #    await ctx.message.delete()
+
+            embed = discord.Embed(title=author.display_name, description="\""+player_ctx.rank(str(author.id))+"\"")
+            embed.set_thumbnail(url=author.avatar_url)
+            embed.set_image(url=_rps_emoji(symbol))
+
+            if game.move1 is not None:
+                game.move2 = RPSMove(player=author, symbol=symbol)
+                game.embed2 = embed
+                await game.channel.send(embed=game.embed1)
+                await game.channel.send(embed=embed)
+
+                other = RPS._RPS.index(game.move1.symbol)
                 current = RPS._RPS.index(symbol)
-                embed = discord.Embed(title=author.display_name, description="\""+player_ctx.rank(str(author.id))+"\"")
-                embed.set_thumbnail(url=author.avatar_url)
-                embed.set_image(url=_rps_emoji(symbol))
-                await ctx.send(embed=game[4])
-                await ctx.send(embed=embed)
                 if (other + 1) % 3 == current:
-                    player_ctx.addCoins(str(game[0].id), -game[2])
-                    player_ctx.addCoins(str(author.id), game[2])
-                    await ctx.send(embed=_embed_message(f"{author.display_name} has won {game[2]} :coin:"))
+                    player_ctx.addCoins(str(game.move1.player.id), -game.coins)
+                    player_ctx.addCoins(str(author.id), game.coins)
+                    await game.channel.send(embed=_embed_message(f"{author.display_name} has won {game.coins} :coin:"))
                     # win_message = discord.Embed(description=player_ctx.win_message(str(author.id)))
                     # win_message.set_thumbnail(author.avatar_url)
-                    # await ctx.send(win_message)
+                    # await game.channel.send(win_message)
                 elif (other - 1) % 3 == current:
-                    player_ctx.addCoins(str(author.id), -game[2])
-                    player_ctx.addCoins(str(game[0].id), game[2])
-                    await ctx.send(embed=_embed_message(f"{game[0].display_name} has won {game[2]} :coin:"))
+                    player_ctx.addCoins(str(author.id), -game.coins)
+                    player_ctx.addCoins(str(game.move1.player.id), game.coins)
+                    await game.channel.send(embed=_embed_message(
+                        f"{game.move1.player.display_name} has won {game.coins} :coin:"))
                     # win_message = discord.Embed(description=player_ctx.win_message(str(game[0].id)))
                     # win_message.set_thumbnail(game[0].avatar_url)
-                    # await ctx.send(win_message)
+                    # await game.channel.send(win_message)
                 else:
-                    await ctx.send(embed=_embed_message("It's a draw :handshake:"))
+                    await game.channel.send(embed=_embed_message("It's a draw :handshake:"))
                 self._active_games.remove(game)
             else:
-                embed = discord.Embed(title=author.display_name, description="\""+player_ctx.rank(str(author.id))+"\"")
-                embed.set_thumbnail(url=author.avatar_url)
-                embed.set_image(url=_rps_emoji(symbol))
-                game.append(symbol)
-                game.append(embed)
-                await ctx.send(embed=_embed_message(f"{author.display_name} has made a move"))
+                game.move1 = RPSMove(player=author, symbol=symbol)
+                game.embed1 = embed
+                await game.channel.send(embed=_embed_message(f"{author.display_name} has made a move"))
 
         @commands.command(help='cancel your current outgoing game challenge')
         async def cancel(self, ctx: commands.Context) -> None:
